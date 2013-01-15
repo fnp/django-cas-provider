@@ -7,3 +7,5 @@
 
 # PyDev garbage
 .tmp*
+/.project
+/.pydevproject
