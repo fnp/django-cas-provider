@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
 {% block title %}
 Login
 {% endblock %}
 
 {% block content %}
-  <form action='{% url cas_login %}' method='post'>
+  <form action='{% url 'cas_login' %}' method='post'>
     <fieldset>
       <legend>Log in to your account</legend>
 	  {% csrf_token %}
