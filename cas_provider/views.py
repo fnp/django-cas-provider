@@ -2,7 +2,6 @@ import logging
 logger = logging.getLogger('cas_provider.views')
 import urllib
 
-import logging
 from urllib import urlencode
 import urllib2
 import urlparse
@@ -28,7 +27,6 @@ from cas_provider.attribute_formatters import NSMAP, CAS
 from cas_provider.models import ProxyGrantingTicket, ProxyTicket
 from cas_provider.models import ServiceTicket
 
-from cas_provider.exceptions import SameEmailMismatchedPasswords
 from cas_provider.forms import LoginForm, MergeLoginForm
 
 from . import signals
@@ -98,7 +96,7 @@ def login(request, template_name='cas/login.html',
         if form.is_valid():
             service = form.cleaned_data.get('service', None)
             try:
-                auth_args = dict(username=form.cleaned_data['email'],
+                auth_args = dict(username=form.cleaned_data['username'],
                                  password=form.cleaned_data['password'])
                 if merge:
                     # We only want to send the merge argument if it's
@@ -106,7 +104,7 @@ def login(request, template_name='cas/login.html',
                     # through the auth backends properly.
                     auth_args['merge'] = merge
                 user = authenticate(**auth_args)
-            except SameEmailMismatchedPasswords:
+            except:
                 # Need to merge the accounts?
                 if merge:
                     # We shouldn't get here...
@@ -115,7 +113,7 @@ def login(request, template_name='cas/login.html',
                     base_url = reverse('cas_provider_merge')
                     args = dict(
                         success_redirect=success_redirect,
-                        email=form.cleaned_data['email'],
+                        username=form.cleaned_data['username'],
                         )
                     if service is not None:
                         args['service'] = service
@@ -133,14 +131,14 @@ def login(request, template_name='cas/login.html',
 
     else:  # Not a POST...
         if merge:
-            form = MergeLoginForm(initial={'service': service, 'email': request.GET.get('email')})
+            form = MergeLoginForm(initial={'service': service, 'username': request.GET.get('username')})
         else:
             form = LoginForm(initial={'service': service})
 
     if user is not None and user.is_authenticated():
         # We have an authenticated user.
         if not user.is_active:
-            errors.append('This account is disabled.')
+            errors.append('This account is disabled. Please contact us if you feel it should be enabled again.')
         else:
             # Send the on_cas_login signal. If we get an HttpResponse, return that.
             for receiver, response in signals.on_cas_login.send(sender=login, request=request, **kwargs):
@@ -326,7 +324,7 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
     uri[3] = urlencode(query)
 
     try:
-        response = urllib2.urlopen(urlparse.urlunsplit(uri))
+        urllib2.urlopen(urlparse.urlunsplit(uri))
     except urllib2.HTTPError as e:
         if not e.code in proxy_callback_good_status:
             logger.debug('Checking Proxy Callback URL {} returned {}. Not issuing PGT.'.format(uri, e.code))
