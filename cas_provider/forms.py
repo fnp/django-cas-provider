@@ -1,10 +1,12 @@
 from django import forms
+from django.utils.translation import ugettext_lazy as _
 
 
 class LoginForm(forms.Form):
     username = forms.CharField(widget=forms.TextInput(attrs={'autofocus': 'autofocus',
-                                                          'max_length': '255'}))
-    password = forms.CharField(widget=forms.PasswordInput())
+                                                          'max_length': '255'}),
+                               label=_('Username'))
+    password = forms.CharField(widget=forms.PasswordInput(), label=_('Password'))
     service = forms.CharField(widget=forms.HiddenInput, required=False)
 
     def __init__(self, *args, **kwargs):
@@ -16,4 +18,5 @@ class LoginForm(forms.Form):
 
 
 class MergeLoginForm(LoginForm):
-    username = forms.CharField(max_length=255, widget=forms.HiddenInput)
+    username = forms.CharField(max_length=255, widget=forms.HiddenInput,
+                               label=_('Username'))

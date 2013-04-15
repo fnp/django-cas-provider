@@ -1,6 +1,8 @@
 # Python garbage
 *.pyc
 *.egg-info
+/build
+/dist
 
 # Mac OS X garbage
 .DS_Store

@@ -1,0 +1,98 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-04-15 10:51+0200\n"
+"PO-Revision-Date: 2013-04-15 10:52+0100\n"
+"Last-Translator: Radek Czajka <radoslaw.czajka@nowoczesnapolska.org.pl>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: forms.py:8
+#: forms.py:22
+msgid "Username"
+msgstr "Użytkownik"
+
+#: forms.py:9
+msgid "Password"
+msgstr "Hasło"
+
+#: models.py:18
+msgid "ticket"
+msgstr ""
+
+#: models.py:19
+msgid "created"
+msgstr ""
+
+#: models.py:38
+msgid "user"
+msgstr ""
+
+#: models.py:39
+msgid "service"
+msgstr ""
+
+#: models.py:44
+msgid "Service Ticket"
+msgstr ""
+
+#: models.py:45
+msgid "Service Tickets"
+msgstr ""
+
+#: models.py:62
+msgid "Login Ticket"
+msgstr ""
+
+#: models.py:63
+msgid "Login Tickets"
+msgstr ""
+
+#: models.py:68
+msgid "PGTiou"
+msgstr ""
+
+#: models.py:77
+#: models.py:82
+#: models.py:92
+msgid "Proxy Granting Ticket"
+msgstr ""
+
+#: models.py:78
+msgid "Proxy Granting Tickets"
+msgstr ""
+
+#: models.py:87
+msgid "Proxy Ticket"
+msgstr ""
+
+#: models.py:88
+msgid "Proxy Tickets"
+msgstr ""
+
+#: models.py:97
+msgid "Proxy Granting Ticket IOU"
+msgstr ""
+
+#: models.py:98
+msgid "Proxy Granting Tickets IOU"
+msgstr ""
+
+#: views.py:128
+msgid "Incorrect username and/or password."
+msgstr "Błędny użytkownik i/lub hasło."
+
+#: views.py:142
+msgid "This account is disabled. Please contact us if you feel it should be enabled again."
+msgstr "To konto jest nieaktywne. Prosimy o kontakt, jeśli uważasz że powinno zostać aktywowane."
+
