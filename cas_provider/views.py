@@ -21,6 +21,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext as _
 
 from lxml import etree
 from cas_provider.attribute_formatters import NSMAP, CAS
@@ -124,7 +125,7 @@ def login(request, template_name='cas/login.html',
                     return HttpResponseRedirect(url)
 
             if user is None:
-                errors.append('Incorrect username and/or password.')
+                errors.append(_('Incorrect username and/or password.'))
             else:
                 if user.is_active:
                     auth_login(request, user)
@@ -138,7 +139,7 @@ def login(request, template_name='cas/login.html',
     if user is not None and user.is_authenticated():
         # We have an authenticated user.
         if not user.is_active:
-            errors.append('This account is disabled. Please contact us if you feel it should be enabled again.')
+            errors.append(_('This account is disabled. Please contact us if you feel it should be enabled again.'))
         else:
             # Send the on_cas_login signal. If we get an HttpResponse, return that.
             for receiver, response in signals.on_cas_login.send(sender=login, request=request, **kwargs):
