@@ -343,7 +343,7 @@ def _cas2_proxy_success(pt):
 
 
 def _cas2_sucess_response(user, pgt=None, proxies=None):
-    return HttpResponse(auth_success_response(user, pgt, proxies), mimetype='text/xml')
+    return HttpResponse(auth_success_response(user, pgt, proxies), content_type='text/xml')
 
 
 def _cas2_error_response(code, message=None):
@@ -354,7 +354,7 @@ def _cas2_error_response(code, message=None):
         </cas:serviceResponse>''' % {
         'code': code,
         'message': message if message else dict(ERROR_MESSAGES).get(code)
-    }, mimetype='text/xml')
+    }, content_type='text/xml')
 
 
 def proxy_success(pt):
