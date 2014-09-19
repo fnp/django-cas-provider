@@ -6,11 +6,17 @@ NSMAP = {'cas': CAS_URI}
 CAS = '{%s}' % CAS_URI
 
 
+try:
+    basestring
+except NameError:
+    basestring = (str, bytes)
+
+
 def jasig(auth_success, attrs):
     attributes = etree.SubElement(auth_success, CAS + 'attributes')
     style = etree.SubElement(attributes, CAS + 'attraStyle')
     style.text = u'Jasig'
-    for name, value in attrs.items():
+    for name, value in sorted(attrs.items()):
         if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
                 element = etree.SubElement(attributes, CAS + name)
@@ -23,7 +29,7 @@ def jasig(auth_success, attrs):
 def ruby_cas(auth_success, attrs):
     style = etree.SubElement(auth_success, CAS + 'attraStyle')
     style.text = u'RubyCAS'
-    for name, value in attrs.items():
+    for name, value in sorted(attrs.items()):
         if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
                 element = etree.SubElement(auth_success, CAS + name)
@@ -35,7 +41,7 @@ def ruby_cas(auth_success, attrs):
 
 def name_value(auth_success, attrs):
     etree.SubElement(auth_success, CAS + 'attribute', name=u'attraStyle', value=u'Name-Value')
-    for name, value in attrs.items():
+    for name, value in sorted(attrs.items()):
         if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
                 etree.SubElement(auth_success, CAS + 'attribute', name=name, value=e)

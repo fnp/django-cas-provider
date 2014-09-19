@@ -3,14 +3,15 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from random import Random
 import string
-import urllib
-import urlparse
-
-if hasattr(urlparse, 'parse_qs'):
-    parse_qs = urlparse.parse_qs
-else:
-    # Python <2.6 compatibility
-    from cgi import parse_qs
+try:
+    from urllib.parse import urlencode, urlparse, parse_qs, ParseResult
+except ImportError:
+    from urllib import urlencode
+    from urlparse import urlparse, ParseResult
+    try:
+        from urlparse import parse_qs
+    except: # Python <2.6 compatibility
+        from cgi import parse_qs
 
 __all__ = ['ServiceTicket', 'LoginTicket', 'ProxyGrantingTicket', 'ProxyTicket', 'ProxyGrantingTicketIOU']
 
@@ -45,13 +46,13 @@ class ServiceTicket(BaseTicket):
         verbose_name_plural = _('Service Tickets')
 
     def get_redirect_url(self):
-        parsed = urlparse.urlparse(self.service)
+        parsed = urlparse(self.service)
         query = parse_qs(parsed.query)
         query['ticket'] = [self.ticket]
-        query = [((k, v) if len(v) > 1 else (k, v[0])) for k, v in query.iteritems()]
-        parsed = urlparse.ParseResult(parsed.scheme, parsed.netloc,
+        query = [((k, v) if len(v) > 1 else (k, v[0])) for k, v in query.items()]
+        parsed = ParseResult(parsed.scheme, parsed.netloc,
                                       parsed.path, parsed.params,
-                                      urllib.urlencode(query), parsed.fragment)
+                                      urlencode(query), parsed.fragment)
         return parsed.geturl()
 
 

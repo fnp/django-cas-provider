@@ -5,7 +5,7 @@ Warning
 {% endblock %}
 
 {% block content %}
-  <form action='{% url cas_login %}' method='get'>
+  <form action='{% url 'cas_login' %}' method='get'>
     <fieldset>
       <legend>Confirm to log in to {{ service }}</legend>
 	  <input type="hidden" name="service" value="{{ service }}">

@@ -1,10 +1,14 @@
 import logging
 logger = logging.getLogger('cas_provider.views')
-import urllib
 
-from urllib import urlencode
-import urllib2
-import urlparse
+try:
+    from urllib.error import HTTPError, URLError
+    from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlencode
+    from urllib2 import HTTPError, URLError, urlopen
+    from urlparse import parse_qsl, urlparse, urlsplit, urlunsplit
 from functools import wraps
 
 from django.utils.decorators import available_attrs
@@ -118,7 +122,7 @@ def login(request, template_name='cas/login.html',
                         )
                     if service is not None:
                         args['service'] = service
-                    args = urllib.urlencode(args)
+                    args = urlencode(args)
 
                     url = '%s?%s' % (base_url, args)
                     logging.debug('Redirecting to %s', url)
@@ -255,8 +259,8 @@ def ticket_validate(service, ticket_string, pgtUrl):
     except ServiceTicket.DoesNotExist:
         return _cas2_error_response(INVALID_TICKET)
 
-    ticketUrl = urlparse.urlparse(ticket.service)
-    serviceUrl = urlparse.urlparse(service)
+    ticketUrl = urlparse(ticket.service)
+    serviceUrl = urlparse(service)
 
     if not(ticketUrl.hostname == serviceUrl.hostname and ticketUrl.path == serviceUrl.path and ticketUrl.port == serviceUrl.port):
         return _cas2_error_response(INVALID_SERVICE)
@@ -307,7 +311,7 @@ def proxy_validate(request):
 
 def generate_proxy_granting_ticket(pgt_url, ticket):
     proxy_callback_good_status = (200, 202, 301, 302, 304)
-    uri = list(urlparse.urlsplit(pgt_url))
+    uri = list(urlsplit(pgt_url))
 
     pgt = ProxyGrantingTicket()
     pgt.serviceTicket = ticket
@@ -319,18 +323,18 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
 
     params = {'pgtId': pgt.ticket, 'pgtIou': pgt.pgtiou}
 
-    query = dict(urlparse.parse_qsl(uri[4]))
+    query = dict(parse_qsl(uri[4]))
     query.update(params)
 
     uri[3] = urlencode(query)
 
     try:
-        urllib2.urlopen(urlparse.urlunsplit(uri))
-    except urllib2.HTTPError as e:
+        urlopen(urlunsplit(uri))
+    except HTTPError as e:
         if not e.code in proxy_callback_good_status:
             logger.debug('Checking Proxy Callback URL {} returned {}. Not issuing PGT.'.format(uri, e.code))
             return
-    except urllib2.URLError as e:
+    except URLError as e:
         logger.debug('Checking Proxy Callback URL {} raised URLError. Not issuing PGT.'.format(uri))
         return
 
@@ -362,7 +366,7 @@ def proxy_success(pt):
     proxySuccess = etree.SubElement(response, CAS + 'proxySuccess')
     proxyTicket = etree.SubElement(proxySuccess, CAS + 'proxyTicket')
     proxyTicket.text = pt
-    return unicode(etree.tostring(response, encoding='utf-8'), 'utf-8')
+    return etree.tostring(response, encoding='unicode')
 
 
 def auth_success_response(user, pgt, proxies):
@@ -397,4 +401,4 @@ def auth_success_response(user, pgt, proxies):
             proxyElement = etree.SubElement(proxiesElement, CAS + "proxy")
             proxyElement.text = proxy
 
-    return unicode(etree.tostring(response, encoding='utf-8'), 'utf-8')
+    return etree.tostring(response, encoding='unicode')
