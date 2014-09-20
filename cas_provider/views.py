@@ -26,6 +26,7 @@ from django.utils.translation import ugettext as _
 from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext as _
 
 from lxml import etree
 from cas_provider.attribute_formatters import NSMAP, CAS
