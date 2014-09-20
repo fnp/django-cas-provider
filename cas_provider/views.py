@@ -239,7 +239,7 @@ def proxy(request):
         return _cas2_error_response(INVALID_TICKET)
 
     pt = ProxyTicket.objects.create(proxyGrantingTicket=proxyGrantingTicket,
-        user=proxyGrantingTicket.serviceTicket.user,
+        user=proxyGrantingTicket.user,
         service=targetService)
     return _cas2_proxy_success(pt.ticket)
 
@@ -276,13 +276,9 @@ def ticket_validate(service, ticket_string, pgtUrl):
     if hasattr(ticket, 'proxyticket'):
         pgt = ticket.proxyticket.proxyGrantingTicket
         # I am issued by this proxy granting ticket
-        if hasattr(pgt.serviceTicket, 'proxyticket'):
-            while pgt:
-                if hasattr(pgt.serviceTicket, 'proxyticket'):
-                    proxies += (pgt.serviceTicket.service,)
-                    pgt = pgt.serviceTicket.proxyticket.proxyGrantingTicket
-                else:
-                    pgt = None
+        while pgt.pgt is not None:
+            proxies += (pgt.service,)
+            pgt = pgt.pgt
 
     user = ticket.user
     ticket.delete()
@@ -315,12 +311,10 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
     uri = list(urlsplit(pgt_url))
 
     pgt = ProxyGrantingTicket()
-    pgt.serviceTicket = ticket
-    pgt.targetService = pgt_url
-
-    if hasattr(ticket, 'proxyGrantingTicket'):
-        # here we got a proxy ticket! tata!
-        pgt.pgt = ticket.proxyGrantingTicket
+    pgt.user = ticket.user
+    pgt.service = ticket.service
+    # Remember if it's a chained PGT.
+    pgt.pgt = getattr(ticket, 'proxyGrantingTicket', None)
 
     params = {'pgtId': pgt.ticket, 'pgtIou': pgt.pgtiou}
 
