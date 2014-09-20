@@ -14,20 +14,21 @@ from django.conf import settings
 
 try:
     from urllib.parse import urlparse, parse_qsl, parse_qs
-    from urllib import request
+    from urllib.request import install_opener
 except:
     from urlparse import urlparse, parse_qsl, parse_qs
-    import urllib2 as request
+    from urllib2 import install_opener
 
 
 
 
-dummy_urlopen_url = None
+class DummyOpener(object):
+    url = None
 
+    @staticmethod
+    def open(url, *args, **kwargs):
+        DummyOpener.url = url
 
-def dummy_urlopen(url):
-    cas_provider.tests.dummy_urlopen_url = url
-    pass
 
 class ViewsTest(TestCase):
 
@@ -40,7 +41,7 @@ class ViewsTest(TestCase):
 
 
     def test_successful_login_with_proxy(self):
-        request.urlopen = dummy_urlopen # monkey patching request.urlopen so that the testcase doesnt really opens a url
+        install_opener(DummyOpener) # Don't really open any URLs
         proxyTarget = "http://my.sweet.service"
 
         response = self._login_user('root', '123')
@@ -56,18 +57,18 @@ class ViewsTest(TestCase):
         self.assertIsNotNone(pgt.text)
         self.assertTrue(pgt.text.startswith('PGTIOU'))
 
-        pgtId = parse_qs(urlparse(cas_provider.tests.dummy_urlopen_url).query)['pgtId']
+        pgtId = parse_qs(urlparse(DummyOpener.url).query)['pgtId']
 
         #Step 2: Get the actual proxy ticket
         proxyTicketResponse = self.client.get(reverse('proxy'), {'targetService': proxyTarget, 'pgt': pgtId}, follow=False)
-        proxyTicketResponseXml = ElementTree.parse(StringIO(proxyTicketResponse.content))
+        proxyTicketResponseXml = ElementTree.parse(StringIO(proxyTicketResponse.content.decode('utf-8')))
         self.assertIsNotNone(proxyTicketResponseXml.find(CAS + "proxySuccess", namespaces=NSMAP))
         self.assertIsNotNone(proxyTicketResponseXml.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP))
         proxyTicket = proxyTicketResponseXml.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP);
 
         #Step 3: I have the proxy ticket I can talk to some other backend service as the currently logged in user!
         proxyValidateResponse = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket.text, 'service': proxyTarget})
-        proxyValidateResponseXml = ElementTree.parse(StringIO(proxyValidateResponse.content))
+        proxyValidateResponseXml = ElementTree.parse(StringIO(proxyValidateResponse.content.decode('utf-8')))
 
         auth_success_2 = proxyValidateResponseXml.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
         user_2 = auth_success.find(CAS + "user", namespaces=NSMAP)
@@ -78,7 +79,7 @@ class ViewsTest(TestCase):
 
 
     def test_successful_proxy_chaining(self):
-        request.urlopen = dummy_urlopen # monkey patching request.urlopen so that the testcase doesnt really opens a url
+        install_opener(DummyOpener) # Don't really open any URLs
         proxyTarget_1 = "http://my.sweet.service_1"
         proxyTarget_2 = "http://my.sweet.service_2"
 
@@ -95,11 +96,11 @@ class ViewsTest(TestCase):
         self.assertIsNotNone(pgt_1.text)
         self.assertTrue(pgt_1.text.startswith('PGTIOU'))
 
-        pgtId_1 = parse_qs(urlparse(cas_provider.tests.dummy_urlopen_url).query)['pgtId']
+        pgtId_1 = parse_qs(urlparse(DummyOpener.url).query)['pgtId']
 
         #Step 2: Get the actual proxy ticket
         proxyTicketResponse_1 = self.client.get(reverse('proxy'), {'targetService': proxyTarget_1, 'pgt': pgtId_1}, follow=False)
-        proxyTicketResponseXml_1 = ElementTree.parse(StringIO(proxyTicketResponse_1.content))
+        proxyTicketResponseXml_1 = ElementTree.parse(StringIO(proxyTicketResponse_1.content.decode('utf-8')))
         self.assertIsNotNone(proxyTicketResponseXml_1.find(CAS + "proxySuccess", namespaces=NSMAP))
         self.assertIsNotNone(proxyTicketResponseXml_1.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP))
         proxyTicket_1 = proxyTicketResponseXml_1.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP);
@@ -123,7 +124,7 @@ class ViewsTest(TestCase):
         self.assertIsNotNone(pgt_2.text)
         self.assertTrue(pgt_2.text.startswith('PGTIOU'))
 
-        pgtId_2 = parse_qs(urlparse(cas_provider.tests.dummy_urlopen_url).query)['pgtId']
+        pgtId_2 = parse_qs(urlparse(DummyOpener.url).query)['pgtId']
 
         #Step 4: Get the second proxy ticket
         proxyTicketResponse_2 = self.client.get(reverse('proxy'), {'targetService': proxyTarget_2, 'pgt': pgtId_2})
@@ -260,7 +261,7 @@ class ViewsTest(TestCase):
 
 
     def test_generate_proxy_granting_ticket(self):
-        request.urlopen = dummy_urlopen # monkey patching request.urlopen so that the testcase doesnt really opens a url
+        install_opener(DummyOpener) # Don't really open any URLs
         url = 'http://my.call.back/callhere'
 
         user = User.objects.get(username = 'root')
@@ -268,7 +269,7 @@ class ViewsTest(TestCase):
         pgt = generate_proxy_granting_ticket(url, st)
         self.assertIsNotNone(pgt)
 
-        calledUrl = cas_provider.tests.dummy_urlopen_url
+        calledUrl = DummyOpener.url
         parsedUrl = urlparse(calledUrl)
         params = parse_qs(parsedUrl.query)
         self.assertIsNotNone(params['pgtId'])
