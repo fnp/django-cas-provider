@@ -108,7 +108,7 @@ class ViewsTest(TestCase):
         #Step 3: I'm backend service 1 - I have the proxy ticket - I want to talk to back service 2
         #
         proxyValidateResponse_1 = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket_1.text, 'service': proxyTarget_1, 'pgtUrl': proxyTarget_2})
-        proxyValidateResponseXml_1 = ElementTree.parse(StringIO(proxyValidateResponse_1.content))
+        proxyValidateResponseXml_1 = ElementTree.parse(StringIO(proxyValidateResponse_1.content.decode('utf-8')))
 
         auth_success_2 = proxyValidateResponseXml_1.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
         user_2 = auth_success_2.find(CAS + "user", namespaces=NSMAP)
@@ -128,13 +128,13 @@ class ViewsTest(TestCase):
 
         #Step 4: Get the second proxy ticket
         proxyTicketResponse_2 = self.client.get(reverse('proxy'), {'targetService': proxyTarget_2, 'pgt': pgtId_2})
-        proxyTicketResponseXml_2 = ElementTree.parse(StringIO(proxyTicketResponse_2.content))
+        proxyTicketResponseXml_2 = ElementTree.parse(StringIO(proxyTicketResponse_2.content.decode('utf-8')))
         self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess", namespaces=NSMAP))
         self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP))
         proxyTicket_2 = proxyTicketResponseXml_2.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP)
 
         proxyValidateResponse_3 = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket_2.text, 'service': proxyTarget_2, 'pgtUrl': None})
-        proxyValidateResponseXml_3 = ElementTree.parse(StringIO(proxyValidateResponse_3.content))
+        proxyValidateResponseXml_3 = ElementTree.parse(StringIO(proxyValidateResponse_3.content.decode('utf-8')))
 
         auth_success_3 = proxyValidateResponseXml_3.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
         user_3 = auth_success_3.find(CAS + "user", namespaces=NSMAP)
@@ -200,6 +200,25 @@ class ViewsTest(TestCase):
         response = self._validate_cas2(response, True)
         user = User.objects.get(username=self.username)
         self.assertEqual(response.content, _cas2_sucess_response(user).content)
+
+    def test_cas2_validate_twice(self):
+        response = self._login_user('root', '123')
+        response2 = self._validate_cas2(response, True)
+        user = User.objects.get(username=self.username)
+        self.assertEqual(response2.content, _cas2_sucess_response(user).content)
+
+        response2 = self._validate_cas2(response, True)
+        self.assertEqual(response2.content, _cas2_error_response(INVALID_TICKET).content)
+
+    def test_cas2_validate_twice_with_pgt(self):
+        proxyTarget = "http://my.sweet.service_1"
+        response = self._login_user('root', '123')
+        response2 = self._validate_cas2(response, True, proxyTarget)
+        user = User.objects.get(username=self.username)
+        self.assertEqual(response2.content, _cas2_sucess_response(user).content)
+
+        response2 = self._validate_cas2(response, True, proxyTarget)
+        self.assertEqual(response2.content, _cas2_error_response(INVALID_TICKET).content)
 
     def test_cas2_custom_attrs(self):
         cas_collect_custom_attributes.connect(cas_mapping)
