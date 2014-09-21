@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from django import VERSION
+
 # Django settings for xxx project.
 
 DEBUG = True
@@ -120,6 +122,9 @@ INSTALLED_APPS = (
     'cas_provider',
     'simple',
 )
+
+if VERSION < (1, 7):
+    INSTALLED_APPS += ('south',)
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
