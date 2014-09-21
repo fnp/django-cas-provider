@@ -11,13 +11,15 @@ setup(
     author='(Chris Williams), Sebastian Annies',
     author_email='(chris@nitron.org), sebastian.annies@googlemail.com',
     url='https://github.com/castlabs/django-cas-provider',
-    packages=find_packages(),
+    packages=find_packages(exclude=['cas_provider_examples']),
     include_package_data=True,
     license='MIT',
     long_description=read('README.rst'),
     zip_safe=False,
-    install_requires=['setuptools',
-                      'south>=0.7.2',],
+    install_requires=[
+        'Django>=1.5,<1.8',
+        'lxml',
+        ],
     classifiers = [
         "Development Status :: 3 - Alpha",
         "Framework :: Django",
