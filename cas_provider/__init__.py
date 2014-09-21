@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.conf import settings
 
 __all__ = []
@@ -8,7 +10,7 @@ _DEFAULTS = {
     'CAS_AUTO_REDIRECT_AFTER_LOGOUT': False,
 }
 
-for key, value in _DEFAULTS.iteritems():
+for key, value in _DEFAULTS.items():
     try:
         getattr(settings, key)
     except AttributeError:

@@ -1,11 +1,16 @@
-import logging
-logger = logging.getLogger('cas_provider.views')
-import urllib
+from __future__ import unicode_literals
 
 import logging
-from urllib import urlencode
-import urllib2
-import urlparse
+logger = logging.getLogger('cas_provider.views')
+
+try:
+    from urllib.error import HTTPError, URLError
+    from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlencode
+    from urllib2 import HTTPError, URLError, urlopen
+    from urlparse import parse_qsl, urlparse, urlsplit, urlunsplit
 from functools import wraps
 
 from django.utils.decorators import available_attrs
@@ -19,16 +24,17 @@ from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.urlresolvers import get_callable
 from django.shortcuts import render_to_response
+from django.utils.translation import ugettext as _
 from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext as _
 
 from lxml import etree
 from cas_provider.attribute_formatters import NSMAP, CAS
 from cas_provider.models import ProxyGrantingTicket, ProxyTicket
 from cas_provider.models import ServiceTicket
 
-from cas_provider.exceptions import SameEmailMismatchedPasswords
 from cas_provider.forms import LoginForm, MergeLoginForm
 
 from . import signals
@@ -41,10 +47,10 @@ INVALID_REQUEST = 'INVALID_REQUEST'
 INTERNAL_ERROR = 'INTERNAL_ERROR'
 
 ERROR_MESSAGES = (
-    (INVALID_TICKET, u'The provided ticket is invalid.'),
-    (INVALID_SERVICE, u'Service is invalid'),
-    (INVALID_REQUEST, u'Not all required parameters were sent.'),
-    (INTERNAL_ERROR, u'An internal error occurred during ticket validation'),
+    (INVALID_TICKET, 'The provided ticket is invalid.'),
+    (INVALID_SERVICE, 'Service is invalid'),
+    (INVALID_REQUEST, 'Not all required parameters were sent.'),
+    (INTERNAL_ERROR, 'An internal error occurred during ticket validation'),
     )
 
 
@@ -98,7 +104,7 @@ def login(request, template_name='cas/login.html',
         if form.is_valid():
             service = form.cleaned_data.get('service', None)
             try:
-                auth_args = dict(username=form.cleaned_data['email'],
+                auth_args = dict(username=form.cleaned_data['username'],
                                  password=form.cleaned_data['password'])
                 if merge:
                     # We only want to send the merge argument if it's
@@ -106,7 +112,7 @@ def login(request, template_name='cas/login.html',
                     # through the auth backends properly.
                     auth_args['merge'] = merge
                 user = authenticate(**auth_args)
-            except SameEmailMismatchedPasswords:
+            except:
                 # Need to merge the accounts?
                 if merge:
                     # We shouldn't get here...
@@ -115,32 +121,32 @@ def login(request, template_name='cas/login.html',
                     base_url = reverse('cas_provider_merge')
                     args = dict(
                         success_redirect=success_redirect,
-                        email=form.cleaned_data['email'],
+                        username=form.cleaned_data['username'],
                         )
                     if service is not None:
                         args['service'] = service
-                    args = urllib.urlencode(args)
+                    args = urlencode(args)
 
                     url = '%s?%s' % (base_url, args)
                     logging.debug('Redirecting to %s', url)
                     return HttpResponseRedirect(url)
 
             if user is None:
-                errors.append('Incorrect username and/or password.')
+                errors.append(_('Incorrect username and/or password.'))
             else:
                 if user.is_active:
                     auth_login(request, user)
 
     else:  # Not a POST...
         if merge:
-            form = MergeLoginForm(initial={'service': service, 'email': request.GET.get('email')})
+            form = MergeLoginForm(initial={'service': service, 'username': request.GET.get('username')})
         else:
             form = LoginForm(initial={'service': service})
 
     if user is not None and user.is_authenticated():
         # We have an authenticated user.
         if not user.is_active:
-            errors.append('This account is disabled.')
+            errors.append(_('This account is disabled. Please contact us if you feel it should be enabled again.'))
         else:
             # Send the on_cas_login signal. If we get an HttpResponse, return that.
             for receiver, response in signals.on_cas_login.send(sender=login, request=request, **kwargs):
@@ -235,7 +241,7 @@ def proxy(request):
         return _cas2_error_response(INVALID_TICKET)
 
     pt = ProxyTicket.objects.create(proxyGrantingTicket=proxyGrantingTicket,
-        user=proxyGrantingTicket.serviceTicket.user,
+        user=proxyGrantingTicket.user,
         service=targetService)
     return _cas2_proxy_success(pt.ticket)
 
@@ -256,8 +262,8 @@ def ticket_validate(service, ticket_string, pgtUrl):
     except ServiceTicket.DoesNotExist:
         return _cas2_error_response(INVALID_TICKET)
 
-    ticketUrl = urlparse.urlparse(ticket.service)
-    serviceUrl = urlparse.urlparse(service)
+    ticketUrl = urlparse(ticket.service)
+    serviceUrl = urlparse(service)
 
     if not(ticketUrl.hostname == serviceUrl.hostname and ticketUrl.path == serviceUrl.path and ticketUrl.port == serviceUrl.port):
         return _cas2_error_response(INVALID_SERVICE)
@@ -269,16 +275,16 @@ def ticket_validate(service, ticket_string, pgtUrl):
         if pgt:
             pgtIouId = pgt.pgtiou
 
-    if hasattr(ticket, 'proxyticket'):
-        pgt = ticket.proxyticket.proxyGrantingTicket
+    try:
+        proxyTicket = ticket.proxyticket
+    except ProxyTicket.DoesNotExist:
+        pass
+    else:
+        pgt = proxyTicket.proxyGrantingTicket
         # I am issued by this proxy granting ticket
-        if hasattr(pgt.serviceTicket, 'proxyticket'):
-            while pgt:
-                if hasattr(pgt.serviceTicket, 'proxyticket'):
-                    proxies += (pgt.serviceTicket.service,)
-                    pgt = pgt.serviceTicket.proxyticket.proxyGrantingTicket
-                else:
-                    pgt = None
+        while pgt.pgt is not None:
+            proxies += (pgt.service,)
+            pgt = pgt.pgt
 
     user = ticket.user
     ticket.delete()
@@ -308,31 +314,29 @@ def proxy_validate(request):
 
 def generate_proxy_granting_ticket(pgt_url, ticket):
     proxy_callback_good_status = (200, 202, 301, 302, 304)
-    uri = list(urlparse.urlsplit(pgt_url))
+    uri = list(urlsplit(pgt_url))
 
     pgt = ProxyGrantingTicket()
-    pgt.serviceTicket = ticket
-    pgt.targetService = pgt_url
-
-    if hasattr(ticket, 'proxyGrantingTicket'):
-        # here we got a proxy ticket! tata!
-        pgt.pgt = ticket.proxyGrantingTicket
+    pgt.user = ticket.user
+    pgt.service = ticket.service
+    # Remember if it's a chained PGT.
+    pgt.pgt = getattr(ticket, 'proxyGrantingTicket', None)
 
     params = {'pgtId': pgt.ticket, 'pgtIou': pgt.pgtiou}
 
-    query = dict(urlparse.parse_qsl(uri[4]))
+    query = dict(parse_qsl(uri[4]))
     query.update(params)
 
     uri[3] = urlencode(query)
 
     try:
-        response = urllib2.urlopen(urlparse.urlunsplit(uri))
-    except urllib2.HTTPError as e:
+        urlopen(urlunsplit(uri))
+    except HTTPError as e:
         if not e.code in proxy_callback_good_status:
-            logger.debug('Checking Proxy Callback URL {} returned {}. Not issuing PGT.'.format(uri, e.code))
+            logger.debug('Checking Proxy Callback URL {0} returned {1}. Not issuing PGT.'.format(uri, e.code))
             return
-    except urllib2.URLError as e:
-        logger.debug('Checking Proxy Callback URL {} raised URLError. Not issuing PGT.'.format(uri))
+    except URLError as e:
+        logger.debug('Checking Proxy Callback URL {0} raised URLError. Not issuing PGT.'.format(uri))
         return
 
     pgt.save()
@@ -344,18 +348,18 @@ def _cas2_proxy_success(pt):
 
 
 def _cas2_sucess_response(user, pgt=None, proxies=None):
-    return HttpResponse(auth_success_response(user, pgt, proxies), mimetype='text/xml')
+    return HttpResponse(auth_success_response(user, pgt, proxies), content_type='text/xml')
 
 
 def _cas2_error_response(code, message=None):
-    return HttpResponse(u'''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
+    return HttpResponse('''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
             <cas:authenticationFailure code="%(code)s">
                 %(message)s
             </cas:authenticationFailure>
         </cas:serviceResponse>''' % {
         'code': code,
         'message': message if message else dict(ERROR_MESSAGES).get(code)
-    }, mimetype='text/xml')
+    }, content_type='text/xml')
 
 
 def proxy_success(pt):
@@ -363,7 +367,7 @@ def proxy_success(pt):
     proxySuccess = etree.SubElement(response, CAS + 'proxySuccess')
     proxyTicket = etree.SubElement(proxySuccess, CAS + 'proxyTicket')
     proxyTicket.text = pt
-    return unicode(etree.tostring(response, encoding='utf-8'), 'utf-8')
+    return etree.tostring(response, encoding='unicode')
 
 
 def auth_success_response(user, pgt, proxies):
@@ -398,4 +402,4 @@ def auth_success_response(user, pgt, proxies):
             proxyElement = etree.SubElement(proxiesElement, CAS + "proxy")
             proxyElement.text = proxy
 
-    return unicode(etree.tostring(response, encoding='utf-8'), 'utf-8')
+    return etree.tostring(response, encoding='unicode')

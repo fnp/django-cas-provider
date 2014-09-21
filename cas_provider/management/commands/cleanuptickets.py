@@ -6,6 +6,7 @@ Calls ``ServiceTickets.objects.delete_expired_users()``, which
 contains the actual logic for determining which accounts are deleted.
 
 """
+from __future__ import print_function, unicode_literals
 
 from django.core.management.base import NoArgsCommand
 from django.conf import settings
@@ -18,21 +19,21 @@ class Command(NoArgsCommand):
     help = "Delete expired service tickets from the database"
 
     def handle_noargs(self, **options):
-        print "Service tickets:"
+        print("Service tickets:")
         tickets = ServiceTicket.objects.all()
         for ticket in tickets:
             expiration = datetime.timedelta(minutes=settings.CAS_TICKET_EXPIRATION)
             if datetime.datetime.now() > ticket.created + expiration:
-                print "Deleting %s..." % ticket.ticket
+                print("Deleting %s..." % ticket.ticket)
                 ticket.delete()
             else:
-                print "%s not expired..." % ticket.ticket
+                print("%s not expired..." % ticket.ticket)
         tickets = LoginTicket.objects.all()
-        print "Login tickets:"
+        print("Login tickets:")
         for ticket in tickets:
             expiration = datetime.timedelta(minutes=settings.CAS_TICKET_EXPIRATION)
             if datetime.datetime.now() > ticket.created + expiration:
-                print "Deleting %s..." % ticket.ticket
+                print("Deleting %s..." % ticket.ticket)
                 ticket.delete()
             else:
-                print "%s not expired..." % ticket.ticket
+                print("%s not expired..." % ticket.ticket)

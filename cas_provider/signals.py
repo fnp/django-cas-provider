@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """cas_provider.signals -- signal definitions for cas_provider
 """
+from __future__ import unicode_literals
+
 from django import dispatch
 
 

@@ -1,5 +1,6 @@
 recursive-include cas_provider/templates *.html
 recursive-include cas_provider/fixtures *
+recursive-include cas_provider/locale *.po *.mo
 include AUTHORS.txt
 include README.rst
 include LICENSE

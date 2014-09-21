@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
+
 from django.contrib import admin
-from models import *
+from .models import *
 
 
 class ServiceTicketAdmin(admin.ModelAdmin):

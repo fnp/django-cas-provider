@@ -1,16 +1,16 @@
-from django.contrib.auth.models import User
+from __future__ import unicode_literals
+
+from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from random import Random
 import string
-import urllib
-import urlparse
-
-if hasattr(urlparse, 'parse_qs'):
-    parse_qs = urlparse.parse_qs
-else:
-    # Python <2.6 compatibility
-    from cgi import parse_qs
+try:
+    from urllib.parse import urlencode, urlparse, parse_qs, ParseResult
+except ImportError:
+    from urllib import urlencode
+    from urlparse import urlparse, ParseResult
+    from urlparse import parse_qs
 
 __all__ = ['ServiceTicket', 'LoginTicket', 'ProxyGrantingTicket', 'ProxyTicket', 'ProxyGrantingTicketIOU']
 
@@ -31,12 +31,12 @@ class BaseTicket(models.Model):
 
     def _generate_ticket(self, length=ticket.max_length, chars=string.ascii_letters + string.digits):
         """ Generates a random string of the requested length. Used for creation of tickets. """
-        return u"%s-%s" % (self.prefix, ''.join(Random().sample(chars, length - (len(self.prefix) + 1))))
+        return "%s-%s" % (self.prefix, ''.join(Random().sample(chars, length - (len(self.prefix) + 1))))
 
 
 class ServiceTicket(BaseTicket):
-    user = models.ForeignKey(User, verbose_name=_('user'))
-    service = models.URLField(_('service'), verify_exists=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('user'))
+    service = models.URLField(_('service'))
 
     prefix = 'ST'
 
@@ -45,13 +45,13 @@ class ServiceTicket(BaseTicket):
         verbose_name_plural = _('Service Tickets')
 
     def get_redirect_url(self):
-        parsed = urlparse.urlparse(self.service)
+        parsed = urlparse(self.service)
         query = parse_qs(parsed.query)
         query['ticket'] = [self.ticket]
-        query = [((k, v) if len(v) > 1 else (k, v[0])) for k, v in query.iteritems()]
-        parsed = urlparse.ParseResult(parsed.scheme, parsed.netloc,
+        query = [((k, v) if len(v) > 1 else (k, v[0])) for k, v in query.items()]
+        parsed = ParseResult(parsed.scheme, parsed.netloc,
                                       parsed.path, parsed.params,
-                                      urllib.urlencode(query), parsed.fragment)
+                                      urlencode(query), parsed.fragment)
         return parsed.geturl()
 
 
@@ -64,13 +64,15 @@ class LoginTicket(BaseTicket):
 
 
 class ProxyGrantingTicket(BaseTicket):
-    serviceTicket = models.ForeignKey(ServiceTicket, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('user'))
+    service = models.URLField(_('service'), null=True)
+    pgt = models.ForeignKey('self', null=True)
     pgtiou = models.CharField(max_length=256, verbose_name=_('PGTiou'))
     prefix = 'PGT'
 
     def __init__(self, *args, **kwargs):
         if 'pgtiou' not in kwargs:
-            kwargs['pgtiou'] = u"PGTIOU-%s" % (''.join(Random().sample(string.ascii_letters + string.digits, 50)))
+            kwargs['pgtiou'] = "PGTIOU-%s" % (''.join(Random().sample(string.ascii_letters + string.digits, 50)))
         super(ProxyGrantingTicket, self).__init__(*args, **kwargs)
 
     class Meta:

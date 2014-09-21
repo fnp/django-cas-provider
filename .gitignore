@@ -1,6 +1,11 @@
 # Python garbage
 *.pyc
 *.egg-info
+/build
+/dist
+.tox
+.coverage
+htmlcov
 
 # Mac OS X garbage
 .DS_Store

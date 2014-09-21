@@ -19,29 +19,6 @@ Or, put `cas_provider` somewhere on your Python path.
 
 If you want use CAS v.2 protocol or above, you must install `lxml` package to correct work.
 
-UPDATING FROM PREVIOUS VERSION
-===============================
-
-I introduced south for DB schema migration. The schema from any previous version without south is 0001_initial.
-You will get an error:
-
-    ``Running migrations for cas_provider:``
-
-    ``- Migrating forwards to 0001_initial.``
-
-    ``> cas_provider:0001_initial``
-
-    ``Traceback (most recent call last):``
-
-    ``...``
-
-    ``django.db.utils.DatabaseError: relation "cas_provider_serviceticket" already exists``
-
-to circumvent that problem you will need to fake the initial migration:
-
- python manage.py migrate cas_provider 0001_initial --fake
-
-
 USAGE
 ======
 

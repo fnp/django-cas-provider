@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 # Django settings for xxx project.
 
 DEBUG = True
@@ -104,10 +106,11 @@ import os
 PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 
 TEMPLATE_DIRS = (
-     os.path.join(PROJECT_PATH, 'templates')
+     os.path.join(PROJECT_PATH, 'templates'),
 )
 
 INSTALLED_APPS = (
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -115,7 +118,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cas_provider',
-    'south',
+    'simple',
 )
 
 # A sample logging configuration. The only tangible logging
