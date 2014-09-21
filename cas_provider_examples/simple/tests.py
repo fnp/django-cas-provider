@@ -3,7 +3,7 @@ from io import StringIO
 from xml import etree
 from xml.etree import ElementTree
 import cas_provider
-from cas_provider.attribute_formatters import CAS, NSMAP
+from cas_provider.attribute_formatters import CAS
 from cas_provider.models import ServiceTicket
 from cas_provider.signals import cas_collect_custom_attributes
 from cas_provider.views import _cas2_sucess_response, INVALID_TICKET, _cas2_error_response, generate_proxy_granting_ticket
@@ -50,9 +50,9 @@ class ViewsTest(TestCase):
         # Test: I'm acting as the service that will call another service
         # Step 1: Get the proxy granting ticket
         responseXml = ElementTree.parse(StringIO(response.content.decode('utf-8')))
-        auth_success = responseXml.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
-        pgt = auth_success.find(CAS + "proxyGrantingTicket", namespaces=NSMAP)
-        user = auth_success.find(CAS + "user", namespaces=NSMAP)
+        auth_success = responseXml.find(CAS + 'authenticationSuccess')
+        pgt = auth_success.find(CAS + "proxyGrantingTicket")
+        user = auth_success.find(CAS + "user")
         self.assertEqual('root', user.text)
         self.assertIsNotNone(pgt.text)
         self.assertTrue(pgt.text.startswith('PGTIOU'))
@@ -62,16 +62,16 @@ class ViewsTest(TestCase):
         #Step 2: Get the actual proxy ticket
         proxyTicketResponse = self.client.get(reverse('proxy'), {'targetService': proxyTarget, 'pgt': pgtId}, follow=False)
         proxyTicketResponseXml = ElementTree.parse(StringIO(proxyTicketResponse.content.decode('utf-8')))
-        self.assertIsNotNone(proxyTicketResponseXml.find(CAS + "proxySuccess", namespaces=NSMAP))
-        self.assertIsNotNone(proxyTicketResponseXml.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP))
-        proxyTicket = proxyTicketResponseXml.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP);
+        self.assertIsNotNone(proxyTicketResponseXml.find(CAS + "proxySuccess"))
+        self.assertIsNotNone(proxyTicketResponseXml.find(CAS + "proxySuccess/" + CAS + "proxyTicket"))
+        proxyTicket = proxyTicketResponseXml.find(CAS + "proxySuccess/" + CAS + "proxyTicket");
 
         #Step 3: I have the proxy ticket I can talk to some other backend service as the currently logged in user!
         proxyValidateResponse = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket.text, 'service': proxyTarget})
         proxyValidateResponseXml = ElementTree.parse(StringIO(proxyValidateResponse.content.decode('utf-8')))
 
-        auth_success_2 = proxyValidateResponseXml.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
-        user_2 = auth_success.find(CAS + "user", namespaces=NSMAP)
+        auth_success_2 = proxyValidateResponseXml.find(CAS + 'authenticationSuccess')
+        user_2 = auth_success.find(CAS + "user")
         proxies_1  = auth_success_2.find(CAS + "proxies")
         self.assertIsNone(proxies_1) # there are no proxies. I am issued by a Service Ticket
         
@@ -89,9 +89,9 @@ class ViewsTest(TestCase):
         # Test: I'm acting as the service that will call another service
         # Step 1: Get the proxy granting ticket
         responseXml = ElementTree.parse(StringIO(response.content.decode('utf-8')))
-        auth_success_1 = responseXml.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
-        pgt_1 = auth_success_1.find(CAS + "proxyGrantingTicket", namespaces=NSMAP)
-        user_1 = auth_success_1.find(CAS + "user", namespaces=NSMAP)
+        auth_success_1 = responseXml.find(CAS + 'authenticationSuccess')
+        pgt_1 = auth_success_1.find(CAS + "proxyGrantingTicket")
+        user_1 = auth_success_1.find(CAS + "user")
         self.assertEqual('root', user_1.text)
         self.assertIsNotNone(pgt_1.text)
         self.assertTrue(pgt_1.text.startswith('PGTIOU'))
@@ -101,25 +101,25 @@ class ViewsTest(TestCase):
         #Step 2: Get the actual proxy ticket
         proxyTicketResponse_1 = self.client.get(reverse('proxy'), {'targetService': proxyTarget_1, 'pgt': pgtId_1}, follow=False)
         proxyTicketResponseXml_1 = ElementTree.parse(StringIO(proxyTicketResponse_1.content.decode('utf-8')))
-        self.assertIsNotNone(proxyTicketResponseXml_1.find(CAS + "proxySuccess", namespaces=NSMAP))
-        self.assertIsNotNone(proxyTicketResponseXml_1.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP))
-        proxyTicket_1 = proxyTicketResponseXml_1.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP);
+        self.assertIsNotNone(proxyTicketResponseXml_1.find(CAS + "proxySuccess"))
+        self.assertIsNotNone(proxyTicketResponseXml_1.find(CAS + "proxySuccess/" + CAS + "proxyTicket"))
+        proxyTicket_1 = proxyTicketResponseXml_1.find(CAS + "proxySuccess/" + CAS +"proxyTicket");
 
         #Step 3: I'm backend service 1 - I have the proxy ticket - I want to talk to back service 2
         #
         proxyValidateResponse_1 = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket_1.text, 'service': proxyTarget_1, 'pgtUrl': proxyTarget_2})
         proxyValidateResponseXml_1 = ElementTree.parse(StringIO(proxyValidateResponse_1.content.decode('utf-8')))
 
-        auth_success_2 = proxyValidateResponseXml_1.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
-        user_2 = auth_success_2.find(CAS + "user", namespaces=NSMAP)
+        auth_success_2 = proxyValidateResponseXml_1.find(CAS + 'authenticationSuccess')
+        user_2 = auth_success_2.find(CAS + "user")
 
         proxies_1  = auth_success_2.find(CAS + "proxies")
         self.assertIsNone(proxies_1) # there are no proxies. I am issued by a Service Ticket
         self.assertIsNotNone(auth_success_2)
         self.assertEqual('root', user_2.text)
 
-        pgt_2 = auth_success_2.find(CAS + "proxyGrantingTicket", namespaces=NSMAP)
-        user = auth_success_2.find(CAS + "user", namespaces=NSMAP)
+        pgt_2 = auth_success_2.find(CAS + "proxyGrantingTicket")
+        user = auth_success_2.find(CAS + "user")
         self.assertEqual('root', user.text)
         self.assertIsNotNone(pgt_2.text)
         self.assertTrue(pgt_2.text.startswith('PGTIOU'))
@@ -129,19 +129,19 @@ class ViewsTest(TestCase):
         #Step 4: Get the second proxy ticket
         proxyTicketResponse_2 = self.client.get(reverse('proxy'), {'targetService': proxyTarget_2, 'pgt': pgtId_2})
         proxyTicketResponseXml_2 = ElementTree.parse(StringIO(proxyTicketResponse_2.content.decode('utf-8')))
-        self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess", namespaces=NSMAP))
-        self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP))
-        proxyTicket_2 = proxyTicketResponseXml_2.find(CAS + "proxySuccess/cas:proxyTicket", namespaces=NSMAP)
+        self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess"))
+        self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess/" + CAS + "proxyTicket"))
+        proxyTicket_2 = proxyTicketResponseXml_2.find(CAS + "proxySuccess/" + CAS + "proxyTicket")
 
         proxyValidateResponse_3 = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket_2.text, 'service': proxyTarget_2, 'pgtUrl': None})
         proxyValidateResponseXml_3 = ElementTree.parse(StringIO(proxyValidateResponse_3.content.decode('utf-8')))
 
-        auth_success_3 = proxyValidateResponseXml_3.find(CAS + 'authenticationSuccess', namespaces=NSMAP)
-        user_3 = auth_success_3.find(CAS + "user", namespaces=NSMAP)
+        auth_success_3 = proxyValidateResponseXml_3.find(CAS + 'authenticationSuccess')
+        user_3 = auth_success_3.find(CAS + "user")
 
         proxies_3  = auth_success_3.find(CAS + "proxies")
         self.assertIsNotNone(proxies_3) # there should be a proxy. I am issued by a Proxy Ticket
-        proxy_3 = proxies_3.find(CAS + "proxy", namespaces=NSMAP)
+        proxy_3 = proxies_3.find(CAS + "proxy")
         self.assertEqual(proxyTarget_1, proxy_3.text )
 
         self.assertIsNotNone(auth_success_2)
