@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from lxml import etree
 import collections
 
@@ -15,7 +17,7 @@ except NameError:
 def jasig(auth_success, attrs):
     attributes = etree.SubElement(auth_success, CAS + 'attributes')
     style = etree.SubElement(attributes, CAS + 'attraStyle')
-    style.text = u'Jasig'
+    style.text = 'Jasig'
     for name, value in sorted(attrs.items()):
         if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
@@ -28,7 +30,7 @@ def jasig(auth_success, attrs):
 
 def ruby_cas(auth_success, attrs):
     style = etree.SubElement(auth_success, CAS + 'attraStyle')
-    style.text = u'RubyCAS'
+    style.text = 'RubyCAS'
     for name, value in sorted(attrs.items()):
         if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
@@ -40,7 +42,7 @@ def ruby_cas(auth_success, attrs):
 
 
 def name_value(auth_success, attrs):
-    etree.SubElement(auth_success, CAS + 'attribute', name=u'attraStyle', value=u'Name-Value')
+    etree.SubElement(auth_success, CAS + 'attribute', name='attraStyle', value='Name-Value')
     for name, value in sorted(attrs.items()):
         if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:

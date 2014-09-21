@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import logging
 logger = logging.getLogger('cas_provider.views')
 
@@ -45,10 +47,10 @@ INVALID_REQUEST = 'INVALID_REQUEST'
 INTERNAL_ERROR = 'INTERNAL_ERROR'
 
 ERROR_MESSAGES = (
-    (INVALID_TICKET, u'The provided ticket is invalid.'),
-    (INVALID_SERVICE, u'Service is invalid'),
-    (INVALID_REQUEST, u'Not all required parameters were sent.'),
-    (INTERNAL_ERROR, u'An internal error occurred during ticket validation'),
+    (INVALID_TICKET, 'The provided ticket is invalid.'),
+    (INVALID_SERVICE, 'Service is invalid'),
+    (INVALID_REQUEST, 'Not all required parameters were sent.'),
+    (INTERNAL_ERROR, 'An internal error occurred during ticket validation'),
     )
 
 
@@ -273,8 +275,12 @@ def ticket_validate(service, ticket_string, pgtUrl):
         if pgt:
             pgtIouId = pgt.pgtiou
 
-    if hasattr(ticket, 'proxyticket'):
-        pgt = ticket.proxyticket.proxyGrantingTicket
+    try:
+        proxyTicket = ticket.proxyticket
+    except ProxyTicket.DoesNotExist:
+        pass
+    else:
+        pgt = proxyTicket.proxyGrantingTicket
         # I am issued by this proxy granting ticket
         while pgt.pgt is not None:
             proxies += (pgt.service,)
@@ -327,10 +333,10 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
         urlopen(urlunsplit(uri))
     except HTTPError as e:
         if not e.code in proxy_callback_good_status:
-            logger.debug('Checking Proxy Callback URL {} returned {}. Not issuing PGT.'.format(uri, e.code))
+            logger.debug('Checking Proxy Callback URL {0} returned {1}. Not issuing PGT.'.format(uri, e.code))
             return
     except URLError as e:
-        logger.debug('Checking Proxy Callback URL {} raised URLError. Not issuing PGT.'.format(uri))
+        logger.debug('Checking Proxy Callback URL {0} raised URLError. Not issuing PGT.'.format(uri))
         return
 
     pgt.save()
@@ -346,7 +352,7 @@ def _cas2_sucess_response(user, pgt=None, proxies=None):
 
 
 def _cas2_error_response(code, message=None):
-    return HttpResponse(u'''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
+    return HttpResponse('''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
             <cas:authenticationFailure code="%(code)s">
                 %(message)s
             </cas:authenticationFailure>

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -8,10 +10,7 @@ try:
 except ImportError:
     from urllib import urlencode
     from urlparse import urlparse, ParseResult
-    try:
-        from urlparse import parse_qs
-    except: # Python <2.6 compatibility
-        from cgi import parse_qs
+    from urlparse import parse_qs
 
 __all__ = ['ServiceTicket', 'LoginTicket', 'ProxyGrantingTicket', 'ProxyTicket', 'ProxyGrantingTicketIOU']
 
@@ -32,7 +31,7 @@ class BaseTicket(models.Model):
 
     def _generate_ticket(self, length=ticket.max_length, chars=string.ascii_letters + string.digits):
         """ Generates a random string of the requested length. Used for creation of tickets. """
-        return u"%s-%s" % (self.prefix, ''.join(Random().sample(chars, length - (len(self.prefix) + 1))))
+        return "%s-%s" % (self.prefix, ''.join(Random().sample(chars, length - (len(self.prefix) + 1))))
 
 
 class ServiceTicket(BaseTicket):
@@ -73,7 +72,7 @@ class ProxyGrantingTicket(BaseTicket):
 
     def __init__(self, *args, **kwargs):
         if 'pgtiou' not in kwargs:
-            kwargs['pgtiou'] = u"PGTIOU-%s" % (''.join(Random().sample(string.ascii_letters + string.digits, 50)))
+            kwargs['pgtiou'] = "PGTIOU-%s" % (''.join(Random().sample(string.ascii_letters + string.digits, 50)))
         super(ProxyGrantingTicket, self).__init__(*args, **kwargs)
 
     class Meta:
