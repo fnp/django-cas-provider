@@ -1,15 +1,16 @@
 from __future__ import unicode_literals
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
+from cas_provider import views
 
 
-urlpatterns = patterns('cas_provider.views',
-    url(r'^login/merge/', 'login', {'merge': True, 'template_name': 'cas/merge.html'}),
-    url(r'^login/?$', 'login', name='cas_login'),
-    url(r'^socialauth-login/$', 'login', name='cas_socialauth_login'),
-    url(r'^validate/?$', 'validate', name='cas_validate'),
-    url(r'^proxy/?$', 'proxy', name='proxy'),
-    url(r'^serviceValidate/?$', 'service_validate', name='cas_service_validate'),
-    url(r'^proxyValidate/?$', 'proxy_validate', name='cas_proxy_validate'),
-    url(r'^logout/?$', 'logout', name='cas_logout'),
-)
+urlpatterns = [
+    url(r'^login/merge/', views.login, {'merge': True, 'template_name': 'cas/merge.html'}),
+    url(r'^login/?$', views.login, name='cas_login'),
+    url(r'^socialauth-login/$', views.login, name='cas_socialauth_login'),
+    url(r'^validate/?$', views.validate, name='cas_validate'),
+    url(r'^proxy/?$', views.proxy, name='proxy'),
+    url(r'^serviceValidate/?$', views.service_validate, name='cas_service_validate'),
+    url(r'^proxyValidate/?$', views.proxy_validate, name='cas_proxy_validate'),
+    url(r'^logout/?$', views.logout, name='cas_logout'),
+]

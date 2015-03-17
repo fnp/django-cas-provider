@@ -23,7 +23,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.urlresolvers import get_callable
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.translation import ugettext as _
 from django.template import RequestContext
 from django.contrib.auth import authenticate
@@ -166,10 +166,10 @@ def login(request, template_name='cas/login.html',
                 return HttpResponseRedirect(success_redirect)
             else:
                 if request.GET.get('warn', False):
-                    return render_to_response(warn_template_name, {
+                    return render(request, warn_template_name, {
                         'service': service,
                         'warn': False
-                    }, context_instance=RequestContext(request))
+                    })
 
                 # Create a service ticket and redirect to the service.
                 ticket = ServiceTicket.objects.create(service=service, user=user)
@@ -182,7 +182,7 @@ def login(request, template_name='cas/login.html',
                 return HttpResponseRedirect(url)
 
     logging.debug('Rendering response on %s, merge is %s', template_name, merge)
-    return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
+    return render(request, template_name, {'form': form, 'errors': errors})
 
 
 @never_cache
@@ -226,8 +226,7 @@ def logout(request, template_name='cas/logout.html',
         auth_logout(request)
         if url and auto_redirect:
             return HttpResponseRedirect(url)
-    return render_to_response(template_name, {'url': url},
-        context_instance=RequestContext(request))
+    return render(request, template_name, {'url': url})
 
 
 @never_cache
