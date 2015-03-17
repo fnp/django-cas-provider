@@ -17,7 +17,7 @@ setup(
     long_description=read('README.rst'),
     zip_safe=False,
     install_requires=[
-        'Django>=1.5,<1.8',
+        'Django>=1.5,<1.9',
         'lxml',
         ],
     classifiers = [
