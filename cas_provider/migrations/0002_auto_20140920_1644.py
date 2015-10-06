@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='proxygrantingticket',
             name='user',
-            field=models.ForeignKey(default=0, verbose_name='user', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(verbose_name='user', to=settings.AUTH_USER_MODEL),
             preserve_default=False,
         ),
     ]
