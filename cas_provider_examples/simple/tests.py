@@ -8,9 +8,10 @@ from cas_provider.models import ServiceTicket
 from cas_provider.signals import cas_collect_custom_attributes
 from cas_provider.views import _cas2_sucess_response, INVALID_TICKET, _cas2_error_response, generate_proxy_granting_ticket
 from django.contrib.auth.models import User, UserManager
-from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.conf import settings
+from django import VERSION
+
 
 try:
     from urllib.parse import urlparse, parse_qsl, parse_qs
@@ -20,6 +21,12 @@ except:
     from urllib2 import install_opener
 
 
+if VERSION >= (1, 10):
+    from django.urls import reverse
+    user_is_anonymous = lambda user: user.is_anonymous
+else:
+    from django.core.urlresolvers import reverse
+    user_is_anonymous = lambda user: user.is_anonymous()
 
 
 class DummyOpener(object):
@@ -160,7 +167,7 @@ class ViewsTest(TestCase):
 
         response = self.client.get(reverse('cas_login'), follow=False)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response['location'].startswith('http://testserver/'))
+        self.assertTrue(response['location'].startswith('http://testserver/' if VERSION < (1, 9) else '/'))
 
         response = self.client.get(response['location'], follow=False)
         self.assertIn(response.status_code, [302, 200])
@@ -183,7 +190,7 @@ class ViewsTest(TestCase):
 
         response = self.client.get(reverse('cas_login'), follow=False)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['user'].is_anonymous(), True)
+        self.assertEqual(user_is_anonymous(response.context['user']), True)
 
 
     def test_broken_pwd(self):

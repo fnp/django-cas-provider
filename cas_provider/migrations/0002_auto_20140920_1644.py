@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='proxygrantingticket',
             name='pgt',
-            field=models.ForeignKey(to='cas_provider.ProxyGrantingTicket', null=True),
+            field=models.ForeignKey(to='cas_provider.ProxyGrantingTicket', null=True, on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='proxygrantingticket',
             name='user',
-            field=models.ForeignKey(default=0, verbose_name='user', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(default=0, verbose_name='user', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE),
             preserve_default=False,
         ),
     ]

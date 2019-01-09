@@ -13,6 +13,7 @@ except ImportError:
     from urlparse import parse_qsl, urlparse, urlsplit, urlunsplit
 from functools import wraps
 
+from django import VERSION
 from django.utils.decorators import available_attrs
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.cache import cache_control
@@ -22,12 +23,11 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout
-from django.core.urlresolvers import get_callable
+
 from django.shortcuts import render
 from django.utils.translation import ugettext as _
 from django.template import RequestContext
 from django.contrib.auth import authenticate
-from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 
 from lxml import etree
@@ -38,6 +38,13 @@ from cas_provider.models import ServiceTicket
 from cas_provider.forms import LoginForm, MergeLoginForm
 
 from . import signals
+
+if VERSION >= (1, 10):
+    from django.urls import get_callable, reverse
+    user_is_authenticated = lambda user: user.is_authenticated
+else:
+    from django.core.urlresolvers import get_callable, reverse
+    user_is_authenticated = lambda user: user.is_authenticated()
 
 __all__ = ['login', 'validate', 'logout', 'service_validate']
 
@@ -143,7 +150,7 @@ def login(request, template_name='cas/login.html',
         else:
             form = LoginForm(initial={'service': service})
 
-    if user is not None and user.is_authenticated():
+    if user is not None and user_is_authenticated(user):
         # We have an authenticated user.
         if not user.is_active:
             errors.append(_('This account is disabled. Please contact us if you feel it should be enabled again.'))
@@ -220,7 +227,7 @@ def validate(request):
 def logout(request, template_name='cas/logout.html',
            auto_redirect=settings.CAS_AUTO_REDIRECT_AFTER_LOGOUT):
     url = request.GET.get('url', None)
-    if request.user.is_authenticated():
+    if user_is_authenticated(request.user):
         for ticket in ServiceTicket.objects.filter(user=request.user):
             ticket.delete()
         auth_logout(request)
