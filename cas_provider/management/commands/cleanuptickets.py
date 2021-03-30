@@ -6,8 +6,6 @@ Calls ``ServiceTickets.objects.delete_expired_users()``, which
 contains the actual logic for determining which accounts are deleted.
 
 """
-from __future__ import print_function, unicode_literals
-
 from django.core.management.base import NoArgsCommand
 from django.conf import settings
 

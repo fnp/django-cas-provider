@@ -1,7 +1,3 @@
-from __future__ import unicode_literals
-
-from django import VERSION
-
 # Django settings for xxx project.
 
 DEBUG = True
@@ -99,8 +95,6 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-# For Django < 1.10
-MIDDLEWARE_CLASSES = MIDDLEWARE
 
 
 ROOT_URLCONF = 'simple.urls'

@@ -1,16 +1,10 @@
-from __future__ import unicode_literals
-
 from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from random import Random
 import string
-try:
-    from urllib.parse import urlencode, urlparse, parse_qs, ParseResult
-except ImportError:
-    from urllib import urlencode
-    from urlparse import urlparse, ParseResult
-    from urlparse import parse_qs
+from urllib.parse import urlencode, urlparse, parse_qs, ParseResult
+
 
 __all__ = ['ServiceTicket', 'LoginTicket', 'ProxyGrantingTicket', 'ProxyTicket', 'ProxyGrantingTicketIOU']
 

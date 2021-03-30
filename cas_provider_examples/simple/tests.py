@@ -1,5 +1,6 @@
-from __future__ import unicode_literals
 from io import StringIO
+from urllib.parse import urlparse, parse_qsl, parse_qs
+from urllib.request import install_opener
 from xml import etree
 from xml.etree import ElementTree
 import cas_provider
@@ -10,23 +11,7 @@ from cas_provider.views import _cas2_sucess_response, INVALID_TICKET, _cas2_erro
 from django.contrib.auth.models import User, UserManager
 from django.test import TestCase
 from django.conf import settings
-from django import VERSION
-
-
-try:
-    from urllib.parse import urlparse, parse_qsl, parse_qs
-    from urllib.request import install_opener
-except:
-    from urlparse import urlparse, parse_qsl, parse_qs
-    from urllib2 import install_opener
-
-
-if VERSION >= (1, 10):
-    from django.urls import reverse
-    user_is_anonymous = lambda user: user.is_anonymous
-else:
-    from django.core.urlresolvers import reverse
-    user_is_anonymous = lambda user: user.is_anonymous()
+from django.urls import reverse
 
 
 class DummyOpener(object):
@@ -140,7 +125,7 @@ class ViewsTest(TestCase):
         self.assertIsNotNone(proxyTicketResponseXml_2.find(CAS + "proxySuccess/" + CAS + "proxyTicket"))
         proxyTicket_2 = proxyTicketResponseXml_2.find(CAS + "proxySuccess/" + CAS + "proxyTicket")
 
-        proxyValidateResponse_3 = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket_2.text, 'service': proxyTarget_2, 'pgtUrl': None})
+        proxyValidateResponse_3 = self.client.get(reverse('cas_proxy_validate'), {'ticket': proxyTicket_2.text, 'service': proxyTarget_2, 'pgtUrl': ''})
         proxyValidateResponseXml_3 = ElementTree.parse(StringIO(proxyValidateResponse_3.content.decode('utf-8')))
 
         auth_success_3 = proxyValidateResponseXml_3.find(CAS + 'authenticationSuccess')
@@ -155,8 +140,6 @@ class ViewsTest(TestCase):
         self.assertEqual('root', user_3.text)
 
 
-
-    
     def test_succeessful_login(self):
         response = self._login_user('root', '123')
         self._validate_cas1(response, True)
@@ -167,7 +150,7 @@ class ViewsTest(TestCase):
 
         response = self.client.get(reverse('cas_login'), follow=False)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response['location'].startswith('http://testserver/' if VERSION < (1, 9) else '/'))
+        self.assertTrue(response['location'].startswith('/'))
 
         response = self.client.get(response['location'], follow=False)
         self.assertIn(response.status_code, [302, 200])
@@ -190,7 +173,7 @@ class ViewsTest(TestCase):
 
         response = self.client.get(reverse('cas_login'), follow=False)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(user_is_anonymous(response.context['user']), True)
+        self.assertTrue(response.context['user'].is_anonymous)
 
 
     def test_broken_pwd(self):

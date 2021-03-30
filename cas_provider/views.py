@@ -1,20 +1,11 @@
-from __future__ import unicode_literals
-
 import logging
 logger = logging.getLogger('cas_provider.views')
 
-try:
-    from urllib.error import HTTPError, URLError
-    from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
-    from urllib.request import urlopen
-except ImportError:
-    from urllib import urlencode
-    from urllib2 import HTTPError, URLError, urlopen
-    from urlparse import parse_qsl, urlparse, urlsplit, urlunsplit
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
+from urllib.request import urlopen
 from functools import wraps
 
-from django import VERSION
-from django.utils.decorators import available_attrs
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.cache import cache_control
 from django.utils.cache import patch_cache_control
@@ -39,12 +30,7 @@ from cas_provider.forms import LoginForm, MergeLoginForm
 
 from . import signals
 
-if VERSION >= (1, 10):
-    from django.urls import get_callable, reverse
-    user_is_authenticated = lambda user: user.is_authenticated
-else:
-    from django.core.urlresolvers import get_callable, reverse
-    user_is_authenticated = lambda user: user.is_authenticated()
+from django.urls import get_callable, reverse
 
 __all__ = ['login', 'validate', 'logout', 'service_validate']
 
@@ -72,7 +58,7 @@ def never_cache(view_func):
     Decorator that adds headers to a response so that it will
     never be cached.
     """
-    @wraps(view_func, assigned=available_attrs(view_func))
+    @wraps(view_func)
     def _wrapped_view_func(request, *args, **kwargs):
         response = view_func(request, *args, **kwargs)
         patch_cache_control(response, no_cache=True,
@@ -150,7 +136,7 @@ def login(request, template_name='cas/login.html',
         else:
             form = LoginForm(initial={'service': service})
 
-    if user is not None and user_is_authenticated(user):
+    if user is not None and user.is_authenticated:
         # We have an authenticated user.
         if not user.is_active:
             errors.append(_('This account is disabled. Please contact us if you feel it should be enabled again.'))
@@ -227,7 +213,7 @@ def validate(request):
 def logout(request, template_name='cas/logout.html',
            auto_redirect=settings.CAS_AUTO_REDIRECT_AFTER_LOGOUT):
     url = request.GET.get('url', None)
-    if user_is_authenticated(request.user):
+    if request.user.is_authenticated:
         for ticket in ServiceTicket.objects.filter(user=request.user):
             ticket.delete()
         auth_logout(request)
