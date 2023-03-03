@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from random import Random
 import string
 from urllib.parse import urlencode, urlparse, parse_qs, ParseResult
@@ -16,9 +16,9 @@ class BaseTicket(models.Model):
         abstract = True
 
     def __init__(self, *args, **kwargs):
-        if 'ticket' not in kwargs:
-            kwargs['ticket'] = self._generate_ticket()
         super(BaseTicket, self).__init__(*args, **kwargs)
+        if not self.ticket:
+            self.ticket = self._generate_ticket()
 
     def __unicode__(self):
         return self.ticket
@@ -65,9 +65,9 @@ class ProxyGrantingTicket(BaseTicket):
     prefix = 'PGT'
 
     def __init__(self, *args, **kwargs):
-        if 'pgtiou' not in kwargs:
-            kwargs['pgtiou'] = "PGTIOU-%s" % (''.join(Random().sample(string.ascii_letters + string.digits, 50)))
         super(ProxyGrantingTicket, self).__init__(*args, **kwargs)
+        if not self.pgtiou:
+            self.pgtiou = "PGTIOU-%s" % (''.join(Random().sample(string.ascii_letters + string.digits, 50)))
 
     class Meta:
         verbose_name = _('Proxy Granting Ticket')
