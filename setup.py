@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name='django-cas-provider',
-    version='23.3',
+    version='24.6',
     description='A "provider" for the Central Authentication Service (http://jasig.org/cas)',
     author='(Chris Williams), Sebastian Annies',
     author_email='(chris@nitron.org), sebastian.annies@googlemail.com',
@@ -17,7 +17,7 @@ setup(
     long_description=read('README.rst'),
     zip_safe=False,
     install_requires=[
-        'Django>=2.0,<4.2',
+        'Django>=2.0,<5.1',
         'lxml',
         ],
     classifiers = [
